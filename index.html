@@ -9,7 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.16.20/dist/shaka-player.ui.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@4.16.20/dist/controls.css"/>
 
-<style>
+  <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
 
@@ -46,6 +46,7 @@ color:rgba(255,255,255,0.12);
 }
 </style>
 </head>
+    
 <body>
 
 <div class="shaka-video-container" id="player-container">
@@ -89,7 +90,7 @@ color:rgba(255,255,255,0.12);
           buffered: 'red',  
           played: 'green'  
         }
-      });  
+      });
 
     player.configure({
       drm:{clearKeys:{[CONFIG.keyId]:CONFIG.key}},
@@ -106,20 +107,16 @@ color:rgba(255,255,255,0.12);
 
     try{
       const response=await fetch(CONFIG.cookieUrl,{cache:"no-store"});
-      const rawText=await response.text();
-      
-      const match = rawText.match(/__hdnea__=[A-Za-z0-9~=/*_-]+/);
-      
-      if (match) {
-        cookieValue = match[0];
-      }
-    }catch(e){
-      console.error("Failed to fetch or parse cookie:", e);
-    }
+      const data=await response.json();
+      cookieValue=data.cookie||"";
+    }catch(e){}
 
     if(cookieValue){
       player.getNetworkingEngine().registerRequestFilter((type,request)=>{
-        
+        request.headers["Referer"]="https://www.jiotv.com/";
+        request.headers["User-Agent"]="plaYtv/7.1.5 (Linux;Android 13) ExoPlayerLib/2.11.6";
+        request.headers["Cookie"]=cookieValue;
+
         let urlCookie=cookieValue.startsWith("__hdnea__=")?cookieValue.substring(10):cookieValue;
 
         if((type===shaka.net.NetworkingEngine.RequestType.MANIFEST||
@@ -136,14 +133,12 @@ color:rgba(255,255,255,0.12);
       video.play().catch(()=>{});
     }catch(e){}
 
-    // THE FIX IS HERE: { once: true } forces this to only happen on the initial load.
-    video.addEventListener("play", () => {
-      video.muted = false;
+    video.addEventListener("play",()=>{
+      video.muted=false;
     }, { once: true });
 
   });
 })();
 </script>
-  
 </body>
 </html>
